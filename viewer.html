@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compound Viewer</title>
+  <meta name="description" content="Interactive 3D viewer for the 75 uniform polyhedron compounds (UC1–UC75) enumerated by John Skilling (1976).">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpolygon points='16,2 28,23 4,23' fill='%230f111a' stroke='%237aa2f7' stroke-width='2'/%3E%3Cpolygon points='16,30 4,9 28,9' fill='none' stroke='%237aa2f7' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="preload" href="vendor/fonts/outfit/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="viewer-body">
+  <div class="viewer-container">
+    <header class="viewer-header">
+      <div class="header-glass">
+        <a href="index.html" id="back-link" class="back-link">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back to Gallery
+        </a>
+        <p class="shape-family" id="shape-family"></p>
+        <h1 id="shape-name">Loading...</h1>
+        <p id="shape-description"></p>
+        <div id="viewer-panel">
+          <details class="shape-details" id="shape-details" open>
+            <summary>Details</summary>
+            <dl class="shape-facts" id="shape-facts"></dl>
+          </details>
+          <div id="param-controls" class="param-controls" hidden>
+            <div id="theta-control" class="param-row" hidden>
+              <label class="param-label" for="theta-slider">Angle &theta;</label>
+              <input id="theta-slider" class="param-slider" type="range" min="0" max="90" step="0.5" value="20">
+              <span id="theta-value" class="param-value">20.0&deg;</span>
+            </div>
+            <div id="prism-controls" class="param-row" hidden>
+              <label class="param-label" for="prism-base">Base {p/q}</label>
+              <select id="prism-base" class="param-select"></select>
+              <label class="param-label" for="prism-n">n</label>
+              <select id="prism-n" class="param-select"></select>
+            </div>
+          </div>
+          <nav class="viewer-controls" aria-label="Viewer controls">
+            <a id="prev-link" class="control-button" href="#">&#8249;</a>
+            <span id="position" class="position"></span>
+            <a id="next-link" class="control-button" href="#">&#8250;</a>
+            <button id="toggle-rotate" class="control-button" type="button" aria-pressed="true">Rotate</button>
+            <button id="toggle-edges" class="control-button" type="button" aria-pressed="true">Edges</button>
+            <button id="toggle-colours" class="control-button" type="button" aria-pressed="true">Colours</button>
+            <button id="toggle-mirror" class="control-button" type="button" aria-pressed="false" hidden>Mirror</button>
+          </nav>
+          <p class="hint">Drag to rotate, scroll to zoom, &larr; &rarr; to browse.</p>
+        </div>
+      </div>
+    </header>
+    <div id="canvas-container"></div>
+  </div>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/three.module.min.js",
+        "three/addons/": "./vendor/three/addons/"
+      }
+    }
+  </script>
+  <script type="module" src="js/viewer.js"></script>
+</body>
+</html>

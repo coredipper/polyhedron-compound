@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uniform Polyhedron Compounds</title>
+  <meta name="description" content="Interactive 3D models of the 75 uniform polyhedron compounds (UC1–UC75) enumerated by John Skilling (1976).">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpolygon points='16,2 28,23 4,23' fill='%230f111a' stroke='%237aa2f7' stroke-width='2'/%3E%3Cpolygon points='16,30 4,9 28,9' fill='none' stroke='%237aa2f7' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="preload" href="vendor/fonts/outfit/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="background-effects">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+  </div>
+  <div class="index-container">
+    <header class="index-header">
+      <h1>Uniform Polyhedron Compounds</h1>
+      <p>The 75 uniform polyhedron compounds (UC1–UC75) enumerated by John Skilling (1976), built from symmetry orbits of uniform constituents.</p>
+    </header>
+    <p class="webgl-warning">3D previews need WebGL, which is not available in this browser.</p>
+    <section class="gallery-toolbar" aria-label="Filter compounds">
+      <div class="filter-groups" id="filter-groups" role="group" aria-label="Filter by family"></div>
+      <div class="search-field">
+        <label class="sr-only" for="gallery-search">Search compounds</label>
+        <input id="gallery-search" class="gallery-search" type="search" placeholder="Search UC5, octahedra, chiral, Ih…" autocomplete="off" spellcheck="false">
+      </div>
+      <p class="gallery-status" id="gallery-status" aria-live="polite"></p>
+    </section>
+    <main class="polyhedra-grid" id="grid"></main>
+    <div class="gallery-empty" id="gallery-empty" hidden>
+      <p id="gallery-empty-message">No compounds match your filter.</p>
+      <button id="gallery-reset" class="control-button" type="button">Reset filters</button>
+    </div>
+  </div>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/three.module.min.js",
+        "three/addons/": "./vendor/three/addons/"
+      }
+    }
+  </script>
+  <script type="module" src="js/index.js"></script>
+</body>
+</html>

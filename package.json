@@ -1,0 +1,14 @@
+{
+  "name": "polyhedron-compound",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive 3D viewer for the 75 uniform polyhedron compounds",
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
