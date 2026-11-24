@@ -6,7 +6,7 @@ import {
   FAMILIES, compounds, describe, formatSymmetry, getCompound, prismBasesFor, thetaSpec,
 } from './registry.js';
 import {
-  addLights, createCompoundObject, createEdgeMaterial, createFaceMaterial,
+  addLights, createCompoundObject, createEdgeMaterial, createFaceMaterialPool,
   createRenderer, onReducedMotionChange, prefersReducedMotion,
 } from './render.js';
 
@@ -130,10 +130,10 @@ function initViewer(startIndex) {
 
   const scene = new THREE.Scene();
   addLights(scene);
-  const faceMaterial = createFaceMaterial({ vertexColors: true });
+  const faceMaterialPool = createFaceMaterialPool({ vertexColors: true });
   const edgeMaterial = createEdgeMaterial(0.35);
 
-  const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
+  const camera = new THREE.PerspectiveCamera(50, width / height, 0.2, 50);
   const fitDistance = () => {
     const vertical = THREE.MathUtils.degToRad(camera.fov / 2);
     const horizontal = Math.atan(Math.tan(vertical) * camera.aspect);
@@ -227,7 +227,7 @@ function initViewer(startIndex) {
       radius: 1.5,
       colourable: true,
       coloured,
-      faceMaterial,
+      faceMaterialPool,
       edgeMaterial,
     });
     if (currentObject) {

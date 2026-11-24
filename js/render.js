@@ -21,7 +21,12 @@ const COMPONENT_COLORS = Array.from(
   (_, i) => new THREE.Color().setHSL((i * 0.618034) % 1, 0.58, 0.6, THREE.SRGBColorSpace),
 );
 
-export function createFaceMaterial({ vertexColors = true } = {}) {
+/**
+ * Face material for a given coplanar depth layer (0 = frontmost). Each higher
+ * layer increases hardware polygonOffset so coplanar overlapping faces from
+ * different constituents never z-fight, while staying behind edge lines.
+ */
+export function createFaceMaterial({ vertexColors = true, layer = 0 } = {}) {
   return new THREE.MeshPhysicalMaterial({
     color: vertexColors ? 0xffffff : FACE_COLOR,
     vertexColors,
@@ -33,9 +38,32 @@ export function createFaceMaterial({ vertexColors = true } = {}) {
     // and mutually intersecting bodies, so both sides of each face are visible.
     side: THREE.DoubleSide,
     polygonOffset: true,
-    polygonOffsetFactor: 1,
-    polygonOffsetUnits: 1,
+    polygonOffsetFactor: 1 + layer * 1.5,
+    polygonOffsetUnits: 2 + layer * 6,
   });
+}
+
+/**
+ * Lazily grown pool of layered face materials shared across a scene (all 75
+ * gallery previews or every compound viewed in the viewer).
+ */
+export function createFaceMaterialPool({ vertexColors = true } = {}) {
+  const materials = [];
+  const ensure = (count) => {
+    while (materials.length < count) {
+      materials.push(createFaceMaterial({ vertexColors, layer: materials.length }));
+    }
+  };
+  return {
+    materialFor(layerCount) {
+      ensure(layerCount);
+      return layerCount === 1 ? materials[0] : materials.slice(0, layerCount);
+    },
+    dispose() {
+      for (const m of materials) m.dispose();
+      materials.length = 0;
+    },
+  };
 }
 
 export function createEdgeMaterial(opacity = 0.35) {
@@ -44,18 +72,23 @@ export function createEdgeMaterial(opacity = 0.35) {
 
 /**
  * Mesh plus edge lines for a compound. Attaches per-constituent vertex colours
- * and `userData.setColoured(on)` when `colourable` is true. Pass shared
- * `faceMaterial` / `edgeMaterial` to avoid creating per-object materials.
+ * and `userData.setColoured(on)` when `colourable` is true. Pass a shared
+ * `faceMaterialPool` / `edgeMaterial` to avoid creating per-object materials.
  */
 export function createCompoundObject(
   compound,
-  { radius = 1, edgeOpacity = 0.35, colourable = true, coloured = true, faceMaterial, edgeMaterial } = {},
+  { radius = 1, edgeOpacity = 0.35, colourable = true, coloured = true, faceMaterialPool, edgeMaterial } = {},
 ) {
   const data = meshData(compound, radius);
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(data.positions, 3));
   geometry.setAttribute('normal', new THREE.BufferAttribute(data.normals, 3));
+  if (data.layerCount > 1) {
+    for (const group of data.groups) {
+      geometry.addGroup(group.start, group.count, group.layer);
+    }
+  }
 
   let setColoured = null;
   if (colourable) {
@@ -74,9 +107,10 @@ export function createCompoundObject(
     setColoured(coloured);
   }
 
-  const ownsFaceMaterial = !faceMaterial;
+  const ownedPool = faceMaterialPool ? null : createFaceMaterialPool({ vertexColors: colourable });
+  const material = (faceMaterialPool ?? ownedPool).materialFor(data.layerCount);
   const ownsEdgeMaterial = !edgeMaterial;
-  const mesh = new THREE.Mesh(geometry, faceMaterial ?? createFaceMaterial({ vertexColors: colourable }));
+  const mesh = new THREE.Mesh(geometry, material);
 
   const edgeGeometry = new THREE.BufferGeometry();
   edgeGeometry.setAttribute('position', new THREE.BufferAttribute(data.edges, 3));
@@ -85,7 +119,7 @@ export function createCompoundObject(
   const dispose = () => {
     geometry.dispose();
     edgeGeometry.dispose();
-    if (ownsFaceMaterial) mesh.material.dispose();
+    if (ownedPool) ownedPool.dispose();
     if (ownsEdgeMaterial) edges.material.dispose();
   };
 

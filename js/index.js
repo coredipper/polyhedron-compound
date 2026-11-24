@@ -7,7 +7,7 @@ import {
   FAMILIES, badgeText, compounds, describe, getCompound, matchesFilter,
 } from './registry.js';
 import {
-  addLights, createCompoundObject, createEdgeMaterial, createFaceMaterial,
+  addLights, createCompoundObject, createEdgeMaterial, createFaceMaterialPool,
   createRenderer, onReducedMotionChange, prefersReducedMotion,
 } from './render.js';
 
@@ -150,10 +150,10 @@ if (!renderer) {
 
   const scene = new THREE.Scene();
   addLights(scene);
-  const faceMaterial = createFaceMaterial({ vertexColors: true });
+  const faceMaterialPool = createFaceMaterialPool({ vertexColors: true });
   const edgeMaterial = createEdgeMaterial(0.3);
 
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.5, 15);
   camera.position.set(0, 0, 3.2);
 
   let rafId = 0;
@@ -216,7 +216,7 @@ if (!renderer) {
       radius: 1,
       colourable: true,
       coloured: true,
-      faceMaterial,
+      faceMaterialPool,
       edgeMaterial,
     });
     object.rotation.set(preview.phase, preview.phase, 0);

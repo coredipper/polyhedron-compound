@@ -4,8 +4,8 @@ import test from 'node:test';
 import {
   THETA_14, THETA_15, THETA_16, buildCompound, invertComponents, samePolyhedron,
 } from '../js/geometry/compound.js';
-import { meshData } from '../js/geometry/mesh.js';
-import { cross, determinant, distance, dot, length, matMul, matVec, rotAxis, sub } from '../js/geometry/vec.js';
+import { faceNormal, meshData } from '../js/geometry/mesh.js';
+import { centroid, cross, determinant, distance, dot, length, matMul, matVec, rotAxis, sub } from '../js/geometry/vec.js';
 import {
   buildAntiprism, buildPrism, buildRhombihexahedron, sameMatrix, symmetryGroup, uniformPolyhedron,
 } from '../js/geometry/wythoff.js';
@@ -372,4 +372,62 @@ test('registry caching and gallery filtering work accurately', () => {
   assert.equal(compounds.filter((c) => matchesFilter(c, { query: 'tetrahemihexahedra' })).length, 2);
   assert.equal(compounds.filter((c) => matchesFilter(c, { family: 'kepler-poinsot', query: 'five' })).length, 4);
   assert.equal(compounds.filter((c) => matchesFilter(c, { query: 'nonexistent-xyz' })).length, 0);
+});
+
+test('coplanar overlapping faces are assigned distinct depth layers across all 75 compounds', () => {
+  const samePlane = (a, b) => {
+    const cos = dot(a.n, b.n);
+    return (cos > 1 - 1e-4 && Math.abs(a.d - b.d) < 1e-4) || (cos < -1 + 1e-4 && Math.abs(a.d + b.d) < 1e-4);
+  };
+
+  for (let uc = 1; uc <= 75; uc++) {
+    const built = buildCompound(uc);
+    const mesh = meshData(built, 1.5);
+    const totalVerts = mesh.positions.length / 3;
+
+    // Groups partition all triangle vertices contiguously.
+    let covered = 0;
+    for (const g of mesh.groups) {
+      assert.equal(g.start, covered, `UC${uc} contiguous group start`);
+      assert.ok(g.count > 0 && g.count % 3 === 0, `UC${uc} group triangle multiple`);
+      assert.ok(g.layer >= 0 && g.layer < mesh.layerCount, `UC${uc} group layer bounds`);
+      covered += g.count;
+    }
+    assert.equal(covered, totalVerts, `UC${uc} groups cover all vertices`);
+
+    // Within any single depth layer, no two distinct components share a plane.
+    for (const g of mesh.groups) {
+      const layerPlanes = [];
+      for (let v = g.start; v < g.start + g.count; v += 3) {
+        const cid = mesh.componentIds[v];
+        const a = [mesh.positions[3 * v], mesh.positions[3 * v + 1], mesh.positions[3 * v + 2]];
+        const b = [mesh.positions[3 * (v + 1)], mesh.positions[3 * (v + 1) + 1], mesh.positions[3 * (v + 1) + 2]];
+        const c = [mesh.positions[3 * (v + 2)], mesh.positions[3 * (v + 2) + 1], mesh.positions[3 * (v + 2) + 2]];
+        const n = faceNormal([a, b, c]);
+        const d = dot(n, centroid([a, b, c]));
+        const plane = d < 0 ? { n: [-n[0], -n[1], -n[2]], d: -d, cid } : { n, d, cid };
+        const conflict = layerPlanes.find((p) => p.cid !== cid && samePlane(p, plane));
+        assert.equal(conflict, undefined, `UC${uc} layer ${g.layer} has coplanar faces from components ${conflict?.cid} and ${cid}`);
+        if (!layerPlanes.some((p) => p.cid === cid && samePlane(p, plane))) {
+          layerPlanes.push(plane);
+        }
+      }
+    }
+  }
+
+  // UC6 (ten tetrahedra): 2 coplanar layers, balanced evenly (each tetrahedron on layer 0 for 2 faces).
+  const uc6Mesh = meshData(buildCompound(6), 1);
+  assert.equal(uc6Mesh.layerCount, 2);
+  const topLayerVertsByComp = new Map();
+  const topGroup = uc6Mesh.groups.find((g) => g.layer === 0);
+  for (let v = topGroup.start; v < topGroup.start + topGroup.count; v += 3) {
+    const cid = uc6Mesh.componentIds[v];
+    topLayerVertsByComp.set(cid, (topLayerVertsByComp.get(cid) ?? 0) + 1);
+  }
+  assert.equal(topLayerVertsByComp.size, 10);
+  for (const [, facesOnTop] of topLayerVertsByComp) assert.equal(facesOnTop, 2);
+
+  // UC19 (through-origin coplanar squares) and UC20 (n=6 -> 12 coplanar prism bases).
+  assert.equal(meshData(buildCompound(19), 1).layerCount, 2);
+  assert.equal(meshData(buildCompound(20, { n: 6, p: 3, q: 1 }), 1).layerCount, 12);
 });
